@@ -8,6 +8,7 @@ use ff::{Field, PrimeField, PrimeFieldDecodingError};
 use generic_array::{typenum, ArrayLength, GenericArray};
 use log::info;
 use rust_gpu_tools::opencl::{self, cl_device_id, Device};
+
 use std::collections::HashMap;
 use std::marker::PhantomData;
 use typenum::{U11, U2, U8};
