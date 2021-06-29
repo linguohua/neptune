@@ -6,6 +6,7 @@ use crate::{Arity, BatchHasher};
 use bellperson::bls::{Bls12, Fr};
 use ff::Field;
 use generic_array::GenericArray;
+use log::info;
 #[cfg(all(feature = "gpu", not(target_os = "macos")))]
 use rust_gpu_tools::opencl::GPUSelector;
 
@@ -23,22 +24,22 @@ where
     fn reset(&mut self);
 }
 
-pub struct ColumnTreeBuilder<ColumnArity, TreeArity>
+pub struct ColumnTreeBuilder<'a, ColumnArity, TreeArity>
 where
     ColumnArity: Arity<Fr>,
     TreeArity: Arity<Fr>,
 {
     pub leaf_count: usize,
-    data: Vec<Fr>,
+    data: &'a mut [Fr],
     /// Index of the first unfilled datum.
     fill_index: usize,
     column_constants: PoseidonConstants<Bls12, ColumnArity>,
     pub column_batcher: Option<Batcher<ColumnArity>>,
-    tree_builder: TreeBuilder<TreeArity>,
+    tree_builder: TreeBuilder<'a, TreeArity>,
 }
 
-impl<ColumnArity, TreeArity> ColumnTreeBuilderTrait<ColumnArity, TreeArity>
-    for ColumnTreeBuilder<ColumnArity, TreeArity>
+impl<'a, ColumnArity, TreeArity> ColumnTreeBuilderTrait<ColumnArity, TreeArity>
+    for ColumnTreeBuilder<'a, ColumnArity, TreeArity>
 where
     ColumnArity: Arity<Fr>,
     TreeArity: Arity<Fr>,
@@ -73,7 +74,7 @@ where
     ) -> Result<(Vec<Fr>, Vec<Fr>), Error> {
         self.add_columns(columns)?;
 
-        let (base, tree) = self.tree_builder.add_final_leaves(&self.data)?;
+        let (base, tree) = self.tree_builder.add_final_leaves2(&mut self.data, self.fill_index)?;
         self.reset();
 
         Ok((base, tree))
@@ -81,7 +82,7 @@ where
 
     fn reset(&mut self) {
         self.fill_index = 0;
-        self.data.iter_mut().for_each(|place| *place = Fr::zero());
+        //self.data.iter_mut().for_each(|place| *place = Fr::zero());
     }
 }
 fn as_generic_arrays<'a, A: Arity<Fr>>(vec: &'a [Fr]) -> &'a [GenericArray<Fr, A>] {
@@ -102,7 +103,7 @@ fn as_generic_arrays<'a, A: Arity<Fr>>(vec: &'a [Fr]) -> &'a [GenericArray<Fr, A
     }
 }
 
-impl<ColumnArity, TreeArity> ColumnTreeBuilder<ColumnArity, TreeArity>
+impl<'a, ColumnArity, TreeArity> ColumnTreeBuilder<'a, ColumnArity, TreeArity>
 where
     ColumnArity: Arity<Fr>,
     TreeArity: Arity<Fr>,
@@ -112,6 +113,7 @@ where
         leaf_count: usize,
         max_column_batch_size: usize,
         max_tree_batch_size: usize,
+        data_buf:&'a mut [Fr]
     ) -> Result<Self, Error> {
         let column_batcher = match &t {
             Some(t) => Some(Batcher::<ColumnArity>::new(t, max_column_batch_size)?),
@@ -140,13 +142,16 @@ where
                 leaf_count,
                 max_tree_batch_size,
                 0,
+                None,
             )?,
-            None => TreeBuilder::<TreeArity>::new(t, leaf_count, max_tree_batch_size, 0)?,
+            None => TreeBuilder::<TreeArity>::new(t, leaf_count, max_tree_batch_size, 0, None)?,
         };
+
+        info!("column_tree_builder data_buf len:{}, leaf count:{}", data_buf.len(), leaf_count);
 
         let builder = Self {
             leaf_count,
-            data: vec![Fr::zero(); leaf_count],
+            data: data_buf,
             fill_index: 0,
             column_constants: PoseidonConstants::<Bls12, ColumnArity>::new(),
             column_batcher,
@@ -158,6 +163,10 @@ where
 
     pub fn tree_size(&self) -> usize {
         self.tree_builder.tree_size(0)
+    }
+
+    pub fn tree_size2(leaf_count:usize) -> usize {
+        TreeBuilder::<TreeArity>::tree_size2(leaf_count, 0)
     }
 
     // Compute root of tree composed of all identical columns. For use in checking correctness of GPU column tree-building
@@ -205,12 +214,13 @@ mod tests {
         max_tree_batch_size: usize,
     ) {
         let batch_size = leaves / num_batches;
-
+        let mut data_buf = vec![Fr::defualt(); 0];
         let mut builder = ColumnTreeBuilder::<U11, U8>::new(
             batcher_type,
             leaves,
             max_column_batch_size,
             max_tree_batch_size,
+            &mut data_buf,
         )
         .unwrap();
 

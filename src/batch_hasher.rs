@@ -166,6 +166,16 @@ where
         }
     }
 
+    fn hash2(&mut self, preimages: &[GenericArray<Fr, A>], result : &mut [Fr]) -> Result<(), Error> {
+        match self {
+            Batcher::CPU(batcher) => batcher.hash2(preimages, result),
+            #[cfg(feature = "gpu")]
+            Batcher::GPU(batcher) => batcher.hash2(preimages, result),
+            #[cfg(feature = "opencl")]
+            Batcher::OpenCL(batcher) => batcher.hash2(preimages, result),
+        }
+    }
+
     fn max_batch_size(&self) -> usize {
         match self {
             Batcher::CPU(batcher) => batcher.max_batch_size(),

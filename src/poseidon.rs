@@ -415,7 +415,7 @@ where
             .for_each(|(l, post)| {
                 // Be explicit that no round key is added after last round of S-boxes.
                 let post_key = if last_round {
-                    panic!("Trying to skip last full round, but there is a key here! ({})");
+                    panic!("Trying to skip last full round, but there is a key here! ({})", last_round);
                 } else {
                     Some(post)
                 };

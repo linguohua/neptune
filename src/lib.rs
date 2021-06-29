@@ -68,6 +68,9 @@ where
     // type State;
 
     fn hash(&mut self, preimages: &[GenericArray<Scalar, A>]) -> Result<Vec<Scalar>, Error>;
+    fn hash2(&mut self, _preimages: &[GenericArray<Scalar, A>], _result : &mut [Scalar]) -> Result<(), Error> {
+        panic!("should not call into not implemented hash2");
+    }
 
     fn hash_into_slice(
         &mut self,
@@ -77,7 +80,8 @@ where
         assert_eq!(target_slice.len(), preimages.len());
         // FIXME: Account for max batch size.
 
-        Ok(target_slice.copy_from_slice(self.hash(preimages)?.as_slice()))
+        // Ok(target_slice.copy_from_slice(self.hash(preimages)?.as_slice()))
+        self.hash2(preimages, target_slice)
     }
 
     /// `max_batch_size` is advisory. Implenters of `BatchHasher` should ensure that up to the returned max hashes can
@@ -85,7 +89,8 @@ where
     /// optimized for performance.
     /// `BatchHasher` users are responsible for not attempting to hash batches larger than the advised maximum.
     fn max_batch_size(&self) -> usize {
-        700000
+        //700000
+        128*1024*1024
     }
 }
 
