@@ -429,6 +429,7 @@ where
                         "Trying to skip last full round, but there is a key here! ({})",
                         post
                     );
+
                 } else {
                     Some(post)
                 };

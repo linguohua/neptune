@@ -43,8 +43,9 @@ incremental = false
 codegen-units = 1
 
 [features]
-default = ["pairing"]
+default = ["pairing","opencl"]
 futhark = ["triton", "rust-gpu-tools"]
+
 opencl = ["rust-gpu-tools"]
 pairing = ["bellperson/pairing"]
 blst = ["bellperson/blst"]

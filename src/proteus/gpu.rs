@@ -266,6 +266,51 @@ where
     fn max_batch_size(&self) -> usize {
         self.max_batch_size
     }
+
+    fn hash2(&mut self, preimages: &[GenericArray<Fr, A>], frs : &mut [Fr]) -> Result<(), Error> {
+        let local_work_size = LOCAL_WORK_SIZE;
+        let max_batch_size = self.max_batch_size;
+        let batch_size = preimages.len();
+        assert!(batch_size <= max_batch_size);
+
+        // Set `global_work_size` to smallest multiple of `local_work_size` >= `batch-size`.
+        let global_work_size = ((batch_size / local_work_size)
+            + (batch_size % local_work_size != 0) as usize)
+            * local_work_size;
+
+        let num_hashes = preimages.len();
+
+        let kernel =
+            self.program
+                .create_kernel("hash_preimages", global_work_size, Some(local_work_size));
+
+        let mut preimages_buffer = self
+            .program
+            .create_buffer::<GenericArray<Fr, A>>(num_hashes)
+            .map_err(|e| Error::GPUError(format!("{:?}", e)))?;
+
+        preimages_buffer
+            .write_from(0, preimages)
+            .map_err(|e| Error::GPUError(format!("{:?}", e)))?;
+        let result_buffer = self
+            .program
+            .create_buffer::<Fr>(num_hashes)
+            .map_err(|e| Error::GPUError(format!("{:?}", e)))?;
+
+        call_kernel!(
+            kernel,
+            &self.constants_buffer,
+            &preimages_buffer,
+            &result_buffer,
+            preimages.len() as i32
+        )
+        .map_err(|e| Error::GPUError(format!("{:?}", e)))?;
+
+        result_buffer
+            .read_into(0, frs)
+            .map_err(|e| Error::GPUError(format!("{:?}", e)))?;
+        Ok(())
+    }
 }
 
 #[cfg(test)]
