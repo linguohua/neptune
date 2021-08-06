@@ -19,8 +19,9 @@ fn bench_column_building(
     leaves: usize,
 ) -> Fr {
     info!("{}: Creating ColumnTreeBuilder", log_prefix);
+    let mut data_buf = vec![Fr::zero(); 0];
     let mut builder =
-        ColumnTreeBuilder::<U11, U8>::new(Some(column_batcher), Some(tree_batcher), leaves)
+        ColumnTreeBuilder::<U11, U8>::new(Some(column_batcher), Some(tree_batcher), leaves, &mut data_buf)
             .unwrap();
     info!("{}: ColumnTreeBuilder created", log_prefix);
 

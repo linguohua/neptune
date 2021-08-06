@@ -119,11 +119,9 @@ where
 
     fn hash2(&mut self, preimages: &[GenericArray<Fr, A>], result : &mut [Fr]) -> Result<(), Error> {
         match self {
-            Batcher::CPU(batcher) => batcher.hash2(preimages, result),
-            #[cfg(feature = "gpu")]
-            Batcher::GPU(batcher) => batcher.hash2(preimages, result),
-            #[cfg(feature = "opencl")]
-            Batcher::OpenCL(batcher) => batcher.hash2(preimages, result),
+            Batcher::Cpu(batcher) => batcher.hash2(preimages, result),
+            #[cfg(any(feature = "futhark", feature = "opencl"))]
+            Batcher::OpenCl(batcher) => batcher.hash2(preimages, result),
         }
     }
 

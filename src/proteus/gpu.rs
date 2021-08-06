@@ -8,7 +8,6 @@ use ff::{Field, PrimeField, PrimeFieldDecodingError};
 use generic_array::{typenum, ArrayLength, GenericArray};
 use log::info;
 use rust_gpu_tools::opencl::{self, cl_device_id, Device};
-
 use std::collections::HashMap;
 use std::marker::PhantomData;
 use typenum::{U11, U2, U8};
@@ -281,35 +280,35 @@ where
 
         let num_hashes = preimages.len();
 
-        let kernel =
-            self.program
-                .create_kernel("hash_preimages", global_work_size, Some(local_work_size));
+        let kernel = self
+            .program
+            .create_kernel("hash_preimages", global_work_size, local_work_size)
+            .map_err(|e| Error::GpuError(format!("{:?}", e)))?;
 
-        let mut preimages_buffer = self
+        let preimages_buffer = self
             .program
             .create_buffer::<GenericArray<Fr, A>>(num_hashes)
-            .map_err(|e| Error::GPUError(format!("{:?}", e)))?;
+            .map_err(|e| Error::GpuError(format!("{:?}", e)))?;
 
-        preimages_buffer
-            .write_from(0, preimages)
-            .map_err(|e| Error::GPUError(format!("{:?}", e)))?;
+        self.program
+            .write_from_buffer(&preimages_buffer, 0, preimages)
+            .map_err(|e| Error::GpuError(format!("{:?}", e)))?;
         let result_buffer = self
             .program
             .create_buffer::<Fr>(num_hashes)
-            .map_err(|e| Error::GPUError(format!("{:?}", e)))?;
+            .map_err(|e| Error::GpuError(format!("{:?}", e)))?;
 
-        call_kernel!(
-            kernel,
-            &self.constants_buffer,
-            &preimages_buffer,
-            &result_buffer,
-            preimages.len() as i32
-        )
-        .map_err(|e| Error::GPUError(format!("{:?}", e)))?;
+        kernel
+            .arg(&self.constants_buffer)
+            .arg(&preimages_buffer)
+            .arg(&result_buffer)
+            .arg(&(preimages.len() as i32))
+            .run()
+            .map_err(|e| Error::GpuError(format!("{:?}", e)))?;
 
-        result_buffer
-            .read_into(0, frs)
-            .map_err(|e| Error::GPUError(format!("{:?}", e)))?;
+        self.program
+            .read_into_buffer(&result_buffer, 0, frs)
+            .map_err(|e| Error::GpuError(format!("{:?}", e)))?;
         Ok(())
     }
 }

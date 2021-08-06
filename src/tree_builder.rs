@@ -5,12 +5,8 @@ use crate::{Arity, BatchHasher};
 use bellperson::bls::{Bls12, Fr};
 use ff::Field;
 use generic_array::GenericArray;
-<<<<<<< HEAD
-=======
+
 use log::{error, info};
-#[cfg(all(feature = "gpu", not(target_os = "macos")))]
-use rust_gpu_tools::opencl::GPUSelector;
->>>>>>> e6907e8 (mamami)
 
 pub trait TreeBuilderTrait<TreeArity>
 where
@@ -422,15 +418,13 @@ mod tests {
     ) {
         let batch_size = leaves / num_batches;
 
-        let mut db = vec![Fr::zero(); 0];
         for rows_to_discard in 0..3 {
             let batcher = match batcher_type {
                 BatcherType::None => None,
                 BatcherType::Cpu => Some(Batcher::new_cpu(512)),
                 BatcherType::Gpu => Some(Batcher::pick_gpu(512).unwrap()),
             };
-            let mut builder = TreeBuilder::<U8>::new(batcher, leaves, rows_to_discard).unwrap();
-
+            let mut builder = TreeBuilder::<U8>::new(batcher, leaves, rows_to_discard, None).unwrap();
 
             // Simplify computing the expected root.
             let constant_element = Fr::zero();

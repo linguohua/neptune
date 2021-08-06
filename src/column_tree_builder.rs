@@ -111,13 +111,15 @@ where
         column_batcher: Option<Batcher<ColumnArity>>,
         tree_batcher: Option<Batcher<TreeArity>>,
         leaf_count: usize,
+        data_buf: &'a mut [Fr],
     ) -> Result<Self, Error> {
-        let tree_builder = TreeBuilder::<TreeArity>::new(tree_batcher, leaf_count, 0)?;
+        let tree_builder = TreeBuilder::<TreeArity>::new(tree_batcher, leaf_count, 0, None)?;
 
         info!("column_tree_builder data_buf len:{}, leaf count:{}", data_buf.len(), leaf_count);
 
         let builder = Self {
             leaf_count,
+            data:data_buf,
             fill_index: 0,
             column_constants: PoseidonConstants::<Bls12, ColumnArity>::new(),
             column_batcher,
@@ -185,9 +187,9 @@ mod tests {
         num_batches: usize,
     ) {
         let batch_size = leaves / num_batches;
-
+        let mut data_buf = vec![Fr::zero(); 0];
         let mut builder =
-            ColumnTreeBuilder::<U11, U8>::new(column_batcher, tree_batcher, leaves).unwrap();
+            ColumnTreeBuilder::<U11, U8>::new(column_batcher, tree_batcher, leaves, &mut data_buf).unwrap();
 
         // Simplify computing the expected root.
         let constant_element = Fr::zero();
