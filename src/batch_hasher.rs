@@ -85,13 +85,7 @@ pub fn mamami() -> GPUSelector {
                 bus_id
             );
             GPUSelector::BusId(bus_id)
-        }
-        .or_else(|_| {
-            error!(
-                "mamami A device with the given bus-id doesn't exist! Defaulting to the first device..."
-            );
-            GPUSelector::Index(0)
-        }),
+        },
         None => GPUSelector::Index(0),
     }
 }
