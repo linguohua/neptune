@@ -123,6 +123,10 @@ where
 
         let mut tree_data = vec![Fr::zero(); intermediate_tree_size];
 
+        if self.data.len() != self.fill_index {
+            panic!("build_tree fill_index {} != len {}", self.fill_index , self.data.len())
+        }
+
         tree_data[0..self.leaf_count].copy_from_slice(&self.data);
 
         let (mut start, mut end) = (0, arity);

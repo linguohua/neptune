@@ -73,7 +73,12 @@ where
     ) -> Result<(Vec<Fr>, Vec<Fr>), Error> {
         self.add_columns(columns)?;
 
-        let (base, tree) = self.tree_builder.add_final_leaves(&self.data)?;
+        let fill = self.fill_index;
+        if fill != self.data.len() {
+            panic!("add_final_columns fill_index {} != len {}", fill, self.data.len())
+        }
+
+        let (base, tree) = self.tree_builder.add_final_leaves(&self.data[..fill])?;
         self.reset();
 
         Ok((base, tree))
