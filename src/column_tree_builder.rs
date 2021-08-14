@@ -81,7 +81,7 @@ where
 
     fn reset(&mut self) {
         self.fill_index = 0;
-        self.data.iter_mut().for_each(|place| *place = Fr::zero());
+        //self.data.iter_mut().for_each(|place| *place = Fr::zero());
     }
 }
 fn as_generic_arrays<'a, A: Arity<Fr>>(vec: &'a [Fr]) -> &'a [GenericArray<Fr, A>] {
