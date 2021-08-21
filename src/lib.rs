@@ -11,6 +11,7 @@ use bellperson::bls::FrRepr;
 pub use error::Error;
 use ff::{Field, PrimeField, ScalarEngine};
 use generic_array::GenericArray;
+pub use rust_gpu_tools::opencl::GPUSelector as GPUSelector;
 
 #[cfg(all(feature = "gpu", feature = "opencl"))]
 compile_error!("gpu and opencl features are mutually exclusive");
