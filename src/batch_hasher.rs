@@ -27,6 +27,30 @@ where
     OpenCl(ClBatchHasher<A>),
 }
 
+pub fn mamami() -> GPUSelector {
+    use log::{info, error};
+    info!("mamami default gpu selector");
+    let bus_id = std::env::var("NEPTUNE_DEFAULT_GPU")
+        .ok()
+        .and_then(|v| match v.parse::<u32>() {
+            Ok(bus_id) => Some(bus_id),
+            Err(_) => {
+                error!("Bus-id '{}' is given in wrong format!", v);
+                None
+            }
+        });
+    match bus_id {
+        Some(bus_id) => {
+            info!(
+                "mamami Using device with bus-id {} for creating the GpuSelector...",
+                bus_id
+            );
+            GPUSelector::BusId(bus_id)
+        },
+        None => GPUSelector::Index(0),
+    }
+}
+
 impl<A> Batcher<A>
 where
     A: Arity<Fr>,
