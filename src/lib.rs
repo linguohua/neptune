@@ -11,7 +11,6 @@ use bellperson::bls::FrRepr;
 pub use error::Error;
 use ff::{Field, PrimeField, ScalarEngine};
 use generic_array::GenericArray;
-pub use rust_gpu_tools::opencl::GPUSelector as GPUSelector;
 
 #[cfg(all(feature = "futhark", feature = "opencl"))]
 compile_error!("futhark and opencl features are mutually exclusive");
