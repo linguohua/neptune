@@ -27,6 +27,50 @@ where
     OpenCl(ClBatchHasher<A>),
 }
 
+pub fn mamami(user_gpu_id: String) -> Result<&'static opencl::Device, Error> {
+    use log::{info, error};
+    info!("mamami gpu selector, user_gpu_id:{}", user_gpu_id);
+    let bus_id_str = if user_gpu_id.len() > 0 {
+        user_gpu_id
+    } else {
+        std::env::var("NEPTUNE_DEFAULT_GPU")
+        .ok()
+        .and_then(|v|
+            v
+        );
+    };
+
+    let selector = if bus_id_str.len() > 0 {
+        let bus_id = match bus_id_str.parse::<u32>() {
+            Ok(bus_id) => Some(bus_id),
+            Err(_) => {
+                error!("Bus-id '{}' is given in wrong format!", v);
+                None
+            }
+        };
+
+        match bus_id {
+            Some(bus_id) => {
+                info!(
+                    "mamami Using device with bus-id {} for creating the GpuSelector...",
+                    bus_id
+                );
+                GPUSelector::BusId(bus_id)
+            },
+            None => GPUSelector::Index(0),
+        }
+    } else {
+        GPUSelector::Index(0)
+    };
+
+    if let Some(device) = selector.get_device() {
+        info!("device: {:?}", device);
+        Ok(device)
+    } else {
+        return Err(Error::ClError(ClError::BusIdNotAvailable));
+    }
+}
+
 impl<A> Batcher<A>
 where
     A: Arity<Fr>,
@@ -57,9 +101,10 @@ where
 
     /// Create a new GPU batcher for an arbitrarily picked device.
     #[cfg(feature = "opencl")]
-    pub fn pick_gpu(max_batch_size: usize) -> Result<Self, Error> {
-        let all = opencl::Device::all();
-        let device = all.first().ok_or(Error::ClError(ClError::DeviceNotFound))?;
+    pub fn pick_gpu(gpu_id: String, max_batch_size: usize) -> Result<Self, Error> {
+        //let all = opencl::Device::all();
+        //let device = all.first().ok_or(Error::ClError(ClError::DeviceNotFound))?;
+        let device = mamami(gpu_id)?;
         Self::new(device, max_batch_size)
     }
 
