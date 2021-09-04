@@ -27,12 +27,12 @@ where
     OpenCl(ClBatchHasher<A>),
 }
 
-pub fn mamami(user_gpu_id: String) -> Result<&'static opencl::Device, Error> {
+pub fn mamami(user_gpu_id: u32) -> Result<&'static opencl::Device, Error> {
     use rust_gpu_tools::opencl::GPUSelector;
     use log::{info, error};
     info!("mamami gpu selector, user_gpu_id:{}", user_gpu_id);
-    let bus_id_str = if user_gpu_id.len() > 0 {
-        user_gpu_id
+    let bus_id_str = if user_gpu_id > 0 {
+        user_gpu_id.to_string()
     } else {
         std::env::var("NEPTUNE_DEFAULT_GPU")
         .unwrap_or_default()
@@ -99,7 +99,7 @@ where
 
     /// Create a new GPU batcher for an arbitrarily picked device.
     #[cfg(feature = "opencl")]
-    pub fn pick_gpu(gpu_id: String, max_batch_size: usize) -> Result<Self, Error> {
+    pub fn pick_gpu(gpu_id: u32, max_batch_size: usize) -> Result<Self, Error> {
         //let all = opencl::Device::all();
         //let device = all.first().ok_or(Error::ClError(ClError::DeviceNotFound))?;
         let device = mamami(gpu_id)?;
