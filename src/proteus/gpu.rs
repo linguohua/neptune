@@ -210,7 +210,7 @@ where
         self.device.clone()
     }
 }
-const LOCAL_WORK_SIZE: usize = 256;
+const LOCAL_WORK_SIZE: usize = 128;
 impl<A> BatchHasher<A> for ClBatchHasher<A>
 where
     A: Arity<Fr>,
@@ -257,7 +257,7 @@ where
         result_buffer
             .read_into(0, &mut frs)
             .map_err(|e| Error::GpuError(format!("{:?}", e)))?;
-        Ok(frs.to_vec())
+        Ok(frs)
     }
 
     fn max_batch_size(&self) -> usize {
