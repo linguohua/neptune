@@ -145,7 +145,8 @@ where
     }
 }
 
-const LOCAL_WORK_SIZE: usize = 256;
+const LOCAL_WORK_SIZE: usize = 128;
+
 impl<A> BatchHasher<A> for ClBatchHasher<A>
 where
     A: Arity<Fr>,
@@ -203,9 +204,17 @@ where
                 .arg(&(preimages.len() as i32))
                 .run()?;
 
-            let mut frs = vec![<Fr as Field>::zero(); num_hashes];
-            program.read_into_buffer(&result_buffer, &mut frs)?;
-            Ok(frs.to_vec())
+            // let mut frs = vec![<Fr as Field>::zero(); num_hashes];
+            // program.read_into_buffer(&result_buffer, &mut frs)?;
+            // Ok(frs.to_vec())
+            let mut frs = Vec::with_capacity(num_hashes);
+            let x_ptr = frs.as_mut_ptr();
+            let s = unsafe { std::slice::from_raw_parts_mut(x_ptr, num_hashes)};
+            program.read_into_buffer(&result_buffer, s)?;
+            unsafe {frs.set_len(num_hashes);}
+
+            Ok(frs)
+
         });
 
         let results = self.program.run(closures, ())?;
