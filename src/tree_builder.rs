@@ -61,7 +61,7 @@ where
 
     fn reset(&mut self) {
         self.fill_index = 0;
-        self.data.iter_mut().for_each(|place| *place = F::zero());
+        //self.data.iter_mut().for_each(|place| *place = F::zero());
     }
 }
 
@@ -118,6 +118,10 @@ where
         let arity = TreeArity::to_usize();
 
         let mut tree_data = vec![F::zero(); intermediate_tree_size];
+
+        if self.data.len() != self.fill_index {
+            panic!("build_tree fill_index {} != len {}", self.fill_index , self.data.len())
+        }
 
         tree_data[0..self.leaf_count].copy_from_slice(&self.data);
 
