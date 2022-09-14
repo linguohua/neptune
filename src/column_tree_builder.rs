@@ -75,7 +75,11 @@ where
 
         let fill = self.fill_index;
         if fill != self.data.len() {
-            panic!("add_final_columns fill_index {} != len {}", fill, self.data.len())
+            panic!(
+                "add_final_columns fill_index {} != len {}",
+                fill,
+                self.data.len()
+            )
         }
 
         let (base, tree) = self.tree_builder.add_final_leaves(&self.data[..fill])?;
@@ -172,8 +176,8 @@ mod tests {
         );
 
         test_column_tree_builder_aux(
-            Some(Batcher::pick_gpu(512).unwrap()),
-            Some(Batcher::pick_gpu(512).unwrap()),
+            Some(Batcher::pick_gpu("", 512).unwrap()),
+            Some(Batcher::pick_gpu("", 512).unwrap()),
             512,
             32,
         );
