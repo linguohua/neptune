@@ -190,9 +190,17 @@ where
                 .arg(&(preimages.len() as i32))
                 .run()?;
 
-            let mut frs = vec![F::zero(); num_hashes];
-            program.read_into_buffer(&result_buffer, &mut frs)?;
-            Ok(frs.to_vec())
+            //let mut frs = vec![F::zero(); num_hashes];
+            //program.read_into_buffer(&result_buffer, &mut frs)?;
+            //Ok(frs.to_vec())
+
+            let mut frs = Vec::with_capacity(num_hashes);
+            let x_ptr = frs.as_mut_ptr();
+            let s = unsafe { std::slice::from_raw_parts_mut(x_ptr, num_hashes)};
+            program.read_into_buffer(&result_buffer, s)?;
+            unsafe {frs.set_len(num_hashes);}
+
+            Ok(frs)
         });
 
         let results = self.program.run(closures, ())?;
