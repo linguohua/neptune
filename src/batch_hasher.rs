@@ -24,7 +24,7 @@ where
 pub fn mamami(user_gpu_id: &str) -> Result<&'static Device, Error> {
     use log::{info, error};
     use std::convert::TryFrom;
-    use rust_gpu_tools::UniqueId;
+    use ec_gpu_gen::rust_gpu_tools::UniqueId;
 
     let id_str = if user_gpu_id.len() > 0 {
         user_gpu_id.to_string()
@@ -71,10 +71,18 @@ where
 
     /// Create a new GPU batcher for an arbitrarily picked device.
     #[cfg(any(feature = "cuda", feature = "opencl"))]
-    pub fn pick_gpu(gpu_id: &str, max_batch_size: usize) -> Result<Self, Error> {
+    pub fn pick_gpu2(gpu_id: &str, max_batch_size: usize) -> Result<Self, Error> {
         //let all = opencl::Device::all();
         //let device = all.first().ok_or(Error::ClError(ClError::DeviceNotFound))?;
         let device = mamami(gpu_id)?;
+        Self::new(device, max_batch_size)
+    }
+
+    /// Create a new GPU batcher for an arbitrarily picked device.
+    #[cfg(any(feature = "cuda", feature = "opencl"))]
+    pub fn pick_gpu(max_batch_size: usize) -> Result<Self, Error> {
+        let all = Device::all();
+        let device = all.first().ok_or(Error::ClError(ClError::DeviceNotFound))?;
         Self::new(device, max_batch_size)
     }
 
