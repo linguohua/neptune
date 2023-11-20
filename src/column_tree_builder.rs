@@ -73,7 +73,16 @@ where
     ) -> Result<(Vec<F>, Vec<F>), Error> {
         self.add_columns(columns)?;
 
-        let (base, tree) = self.tree_builder.add_final_leaves(&self.data)?;
+        let fill = self.fill_index;
+        if fill != self.data.len() {
+            panic!(
+                "add_final_columns fill_index {} != len {}",
+                fill,
+                self.data.len()
+            )
+        }
+
+        let (base, tree) = self.tree_builder.add_final_leaves(&self.data[..fill])?;
         self.reset();
 
         Ok((base, tree))
@@ -81,7 +90,7 @@ where
 
     fn reset(&mut self) {
         self.fill_index = 0;
-        self.data.iter_mut().for_each(|place| *place = F::ZERO);
+        //self.data.iter_mut().for_each(|place| *place = F::ZERO);
     }
 }
 fn as_generic_arrays<A: Arity<F>, F: PrimeField>(vec: &[F]) -> &[GenericArray<F, A>] {
@@ -171,8 +180,8 @@ mod tests {
         );
 
         test_column_tree_builder_aux(
-            Some(Batcher::pick_gpu(512).unwrap()),
-            Some(Batcher::pick_gpu(512).unwrap()),
+            Some(Batcher::pick_gpu("", 512).unwrap()),
+            Some(Batcher::pick_gpu("", 512).unwrap()),
             512,
             32,
         );

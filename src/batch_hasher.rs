@@ -22,6 +22,36 @@ where
     OpenCl(ClBatchHasher<F, A>),
 }
 
+pub fn mamami(user_gpu_id: &str) -> Result<&'static Device, Error> {
+    use log::{info, error};
+    use std::convert::TryFrom;
+    use ec_gpu_gen::rust_gpu_tools::UniqueId;
+
+    let id_str = if user_gpu_id.len() > 0 {
+        user_gpu_id.to_string()
+    } else {
+        std::env::var("NEPTUNE_DEFAULT_GPU")
+        .unwrap_or_default()
+    };
+
+    info!("mamami gpu selector, unique id:{}", id_str);
+
+    if id_str.len() > 0 {
+        let id = UniqueId::try_from(id_str.as_str())?;
+        if let Some(d) = Device::by_unique_id(id) {
+            return Ok(d);
+        }
+    }
+
+    let dd = Device::all();
+    if dd.len() > 0 {
+        return Ok(dd[0]);
+    }
+
+    let msg = format!("mamami gpu selector, no device found for:{}", id_str);
+    return Err(Error::Other(msg));
+}
+
 impl<F, A> Batcher<F, A>
 where
     F: NeptuneField,
@@ -42,10 +72,18 @@ where
 
     /// Create a new GPU batcher for an arbitrarily picked device.
     #[cfg(any(feature = "cuda", feature = "opencl"))]
+    pub fn pick_gpu2(gpu_id: &str, max_batch_size: usize) -> Result<Self, Error> {
+        //let all = opencl::Device::all();
+        //let device = all.first().ok_or(Error::ClError(ClError::DeviceNotFound))?;
+        let device = mamami(gpu_id)?;
+        Self::new(device, max_batch_size)
+    }
+
+    /// Create a new GPU batcher for an arbitrarily picked device.
+    #[cfg(any(feature = "cuda", feature = "opencl"))]
     pub fn pick_gpu(max_batch_size: usize) -> Result<Self, Error> {
-        let device = *Device::all()
-            .first()
-            .ok_or(Error::ClError(ClError::DeviceNotFound))?;
+        let all = Device::all();
+        let device = all.first().ok_or(Error::ClError(ClError::DeviceNotFound))?;
         Self::new(device, max_batch_size)
     }
 
